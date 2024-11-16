@@ -9,9 +9,9 @@ def getLine():
             input = sys.stdin.readline()
             return input
     return False
- 
-host = input("Please Enter Remote IP: ")
-port = input("Please Enter Remote Port: ")
+#ask IP address and port of remote partner
+host = '127.0.0.1'    #input("Please Enter Remote IP: ")
+port = 65432 #input("Please Enter Remote Port: ")
 
 remoteAddressAndPort = (host, int(port)) # Set the address to send to
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
@@ -30,6 +30,10 @@ while 1:
         message, address = clientSocket.recvfrom(8192) # Buffer size is 8192. Change as needed.
         if message:
             print (address, "> ", message.decode())
+            if message.decode() == 'start':
+                print('start system')
+            elif message.decode() == 'stop':
+                print('stop system')
     except:
         pass
  
