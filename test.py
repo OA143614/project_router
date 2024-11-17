@@ -4,7 +4,9 @@ class Graph:
         self.edges = []
 
     def add_edge(self, u, v, weight):
-        self.edges.append((u, v, weight))
+        # Check for duplicates before adding
+        if (u, v, weight) not in self.edges:
+            self.edges.append((u, v, weight))
 
 
 class BellmanFord:
@@ -46,28 +48,52 @@ class BellmanFord:
             destination = next_destination
         return path[::-1], total_distance
 
+def add_edge(graph, start, end, weight):
+    graph.add_edge(start, end, weight)
 
-if __name__ == '__main__':
-    vertices = ['A', 'B', 'C', 'D', 'E']
+def add_node_add_edge(graph, vertices, data):
+    graph.vertices = vertices
+    
+    for start, end, weight in data:
+        add_edge(graph, start, end, weight)
+
+def main():
+    vertices = ['10000', '11000', '12000', '13000', '14000']
+    data = [
+        ('10000', '11000', 4),
+        ('10000', '11000', 50),
+        #('B', 'A', 4),
+        ('11000', '12000', 1),
+        #('C', 'A', 50),
+        ('12000', '11000', 1),
+       # ('A', 'B', 60)
+        
+
+    ]
+    data.append(('11000', '12000', 1))
+    data.append(('12000','11000',1))
+
+    
+    # Use a dictionary to track unique edges and their values
+    unique_edges = {}
+
+    for edge in data:
+        print(edge[0], edge[1],edge[2])
+        unique_edges[(edge[0], edge[1])] = edge[2]
+        
+    # Convert the dictionary back to a list of tuples
+    filtered_data = [(k[0], k[1], v) for k, v in unique_edges.items()]
+
+    print(filtered_data)
     graph = Graph(vertices)
-    graph.add_edge('A', 'B', 1)
-    graph.add_edge('A', 'C', 2)
-    graph.add_edge('A', 'E', 4)
-    graph.add_edge('B', 'D', 3)
-    graph.add_edge('B', 'E', 6)
-    graph.add_edge('B', 'A', 1)
-    #graph.add_edge('C', 'B', 1)
-    graph.add_edge('C', 'D', 3)
-    graph.add_edge('C', 'A', 2)
-    graph.add_edge('D', 'E', 2)
-    graph.add_edge('D', 'B', 3)
-    graph.add_edge('D', 'C', 3)
-    graph.add_edge('E', 'A', 4)
-    graph.add_edge('E', 'B', 6)
-    graph.add_edge('E', 'D', 2)
-    print(graph)
-    bf = BellmanFord(graph, 'A')
+    add_node_add_edge(graph, vertices, filtered_data)
+    
+    print(graph.edges)
+    bf = BellmanFord(graph, '10000')
     bf.run()
-    path, total_distance = bf.get_shortest_path('E')
-    print("Shortest path from A to E:", path)
-    print("Total distance from A to E:", total_distance)
+    path, total_distance = bf.get_shortest_path('12000')
+    print("Shortest path from 10000 to 12000:", path)
+    print("Total distance from 10000 to 12000:", total_distance)
+
+if __name__ == "__main__":
+    main()
