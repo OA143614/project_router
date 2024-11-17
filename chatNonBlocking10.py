@@ -1,7 +1,7 @@
 # Based on https://thecodeninja.net/2014/12/udp-chat-in-python/
 import sys, select, socket
 
-
+data=[] 
 # Read a line. Using select for non blocking reading of sys.stdin
 def getLine():
     i,o,e = select.select([sys.stdin],[],[],0.0001)
@@ -25,7 +25,6 @@ incomingPort = 10000;
 clientSocket.setblocking(False) # Set socket to non-blocking mode
 clientSocket.bind(('', incomingPort)) #Accept Connections on port
 print ("This client is accepting connections on port", incomingPort)
-
 #routing protocol
 class Graph:
     def __init__(self, vertices):
@@ -90,39 +89,66 @@ def add_node_add_edge(graph, vertices, data):
 
 vertices = ['10000', '11000', '12000', '13000', '14000'] 
 data = [
-        ('10000', '11000', 4),
-        ('11000', '10000', 4)
+        ('10000', '11000', 2),
+        ('11000', '10000', 2),
+        ('11000', '12000', 8),
+        ('12000', '11000', 8)
+        
 
     ]
 while 1:
+    
     try:
+        #print(data)
+        
         message, address = clientSocket.recvfrom(20000) # Buffer size is 8192. Change as needed.
-        if message:
-            #data.append(message)
+        decoded_message = message.decode().rstrip()  # Decode and strip whitespace
+        #print(f"Received message: '{decoded_message}'")  # Debugging output
+
+        # Check the exact length and content of the decoded message
+
+        if decoded_message == 'on':
+            print("sending")
+            for edge_table in data:
+                edge_table_str = f"({edge_table[0]}, {edge_table[1]}, {edge_table[2]})"
+                clientSocket.sendto(edge_table_str.encode(), remoteAddressAndPort)
+                #clientSocket.sendto(edge_table.encode(), remoteAddressAndPort)
+        else:
+            print("recieve")
+            print(decoded_message)
             print (address[1], "> ", message.decode())
             # Assuming the message is a string representation of a tuple
             edge = eval(message.decode())
-            data.append((str(edge[0]), str(edge[1]), edge[2]))
-        # Use a dictionary to track unique edges and their values
-        unique_edges = {}
+            edge_data = (str(edge[0]), str(edge[1]), edge[2])
+            print(edge_data,"1")
+            for i, existing_edge in enumerate(data):
+                if existing_edge[0] == edge_data[0] and existing_edge[1] == edge_data[1]:
+                    edge_exists = True
+                    # If the weight is different, update the edge
+                    if existing_edge[2] != edge_data[2]:
+                        data[i] = edge_data
+                        clientSocket.sendto("edge_data".encode(),(host, 12000))
+                    break
+            # Use a dictionary to track unique edges and their values
+            unique_edges = {}
 
-        for edge in data:
-            print(edge[0], edge[1],edge[2])
-            unique_edges[(edge[0], edge[1])] = edge[2]
+            for edge in data:
+                print(edge[0], edge[1],edge[2])
+                unique_edges[(edge[0], edge[1])] = edge[2]
         
-        # Convert the dictionary back to a list of tuples
-        filtered_data = [(k[0], k[1], v) for k, v in unique_edges.items()]
+            # Convert the dictionary back to a list of tuples
+            filtered_data = [(k[0], k[1], v) for k, v in unique_edges.items()]
 
-        print(filtered_data)
-        graph = Graph(vertices)
-        add_node_add_edge(graph, vertices, filtered_data)
+            print(filtered_data)
+            graph = Graph(vertices)
+            add_node_add_edge(graph, vertices, filtered_data)
     
-        print(graph.edges)
-           
+            print(graph.edges)
+         
     except:
         pass
  
     input = getLine();
     if(input != False):
-        print ("input is: ", input)
+        print ("input is: ",input)
         clientSocket.sendto(input.encode(), remoteAddressAndPort)

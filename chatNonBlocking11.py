@@ -33,7 +33,8 @@ class Graph:
         self.edges = []
 
     def add_edge(self, u, v, weight):
-        self.edges.append((u, v, weight))
+        if (u, v, weight) not in self.edges:
+            self.edges.append((u, v, weight))
 
 
 class BellmanFord:
@@ -101,20 +102,52 @@ while 1:
         #print(data)
         
         message, address = clientSocket.recvfrom(20000) # Buffer size is 8192. Change as needed.
-        
-        if message:
+        decoded_message = message.decode().rstrip()  # Decode and strip whitespace
+        #print(f"Received message: '{decoded_message}'")  # Debugging output
+
+        # Check the exact length and content of the decoded message
+
+        if decoded_message == 'on':
+            print("sending")
             for edge_table in data:
                 edge_table_str = f"({edge_table[0]}, {edge_table[1]}, {edge_table[2]})"
                 clientSocket.sendto(edge_table_str.encode(), remoteAddressAndPort)
                 #clientSocket.sendto(edge_table.encode(), remoteAddressAndPort)
+        else:
+            print("recieve")
             print(edge_table)
             print (address[1], "> ", message.decode())
+            # Assuming the message is a string representation of a tuple
+            edge = eval(message.decode())
+            edge_data = (str(edge[0]), str(edge[1]), edge[2])
+            print(edge_data,"1")
+            for i, existing_edge in enumerate(data):
+                if existing_edge[0] == edge_data[0] and existing_edge[1] == edge_data[1]:
+                    edge_exists = True
+                    # If the weight is different, update the edge
+                    if existing_edge[2] != edge_data[2]:
+                        data[i] = edge_data
+                    break
+            # Use a dictionary to track unique edges and their values
+            unique_edges = {}
 
+            for edge in data:
+                print(edge[0], edge[1],edge[2])
+                unique_edges[(edge[0], edge[1])] = edge[2]
+        
+            # Convert the dictionary back to a list of tuples
+            filtered_data = [(k[0], k[1], v) for k, v in unique_edges.items()]
+
+            print(filtered_data)
+            graph = Graph(vertices)
+            add_node_add_edge(graph, vertices, filtered_data)
+    
+            print(graph.edges)
          
     except:
         pass
  
     input = getLine();
     if(input != False):
-        print ("input is: ", input)
+        print ("input is: ",input)
         clientSocket.sendto(input.encode(), remoteAddressAndPort)
