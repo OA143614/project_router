@@ -25,7 +25,6 @@ incomingPort = 11000;
 clientSocket.setblocking(False) # Set socket to non-blocking mode
 clientSocket.bind(('', incomingPort)) #Accept Connections on port
 print ("This client is accepting connections on port", incomingPort)
-
 #routing protocol
 class Graph:
     def __init__(self, vertices):
@@ -90,10 +89,11 @@ def add_node_add_edge(graph, vertices, data):
 
 vertices = ['10000', '11000', '12000', '13000', '14000'] 
 data = [
-        ('10000', '11000', 3),
-        ('11000', '10000', 3),
+        ('10000', '11000', 2),
+        ('11000', '10000', 2),
         ('11000', '12000', 8),
         ('12000', '11000', 8)
+        
 
     ]
 while 1:
@@ -115,7 +115,7 @@ while 1:
                 #clientSocket.sendto(edge_table.encode(), remoteAddressAndPort)
         else:
             print("recieve")
-            print(edge_table)
+            print(decoded_message)
             print (address[1], "> ", message.decode())
             # Assuming the message is a string representation of a tuple
             edge = eval(message.decode())
@@ -127,20 +127,11 @@ while 1:
                     # If the weight is different, update the edge
                     if existing_edge[2] != edge_data[2]:
                         data[i] = edge_data
+                        clientSocket.sendto("edge_data".encode(),(host, 12000))
                     break
-            # Use a dictionary to track unique edges and their values
-            unique_edges = {}
-
-            for edge in data:
-                print(edge[0], edge[1],edge[2])
-                unique_edges[(edge[0], edge[1])] = edge[2]
-        
-            # Convert the dictionary back to a list of tuples
-            filtered_data = [(k[0], k[1], v) for k, v in unique_edges.items()]
-
-            print(filtered_data)
+           
             graph = Graph(vertices)
-            add_node_add_edge(graph, vertices, filtered_data)
+            add_node_add_edge(graph, vertices, data)
     
             print(graph.edges)
          

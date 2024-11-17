@@ -89,8 +89,8 @@ def add_node_add_edge(graph, vertices, data):
 
 vertices = ['10000', '11000', '12000', '13000', '14000'] 
 data = [
-        ('10000', '11000', 2),
-        ('11000', '10000', 2),
+        ('10000', '11000', 24),
+        ('11000', '10000', 24),
         ('11000', '12000', 8),
         ('12000', '11000', 8)
         
@@ -129,19 +129,9 @@ while 1:
                         data[i] = edge_data
                         clientSocket.sendto("edge_data".encode(),(host, 12000))
                     break
-            # Use a dictionary to track unique edges and their values
-            unique_edges = {}
-
-            for edge in data:
-                print(edge[0], edge[1],edge[2])
-                unique_edges[(edge[0], edge[1])] = edge[2]
-        
-            # Convert the dictionary back to a list of tuples
-            filtered_data = [(k[0], k[1], v) for k, v in unique_edges.items()]
-
-            print(filtered_data)
+           
             graph = Graph(vertices)
-            add_node_add_edge(graph, vertices, filtered_data)
+            add_node_add_edge(graph, vertices, data)
     
             print(graph.edges)
          
