@@ -57,43 +57,53 @@ def add_node_add_edge(graph, vertices, data):
     for start, end, weight in data:
         add_edge(graph, start, end, weight)
 
+def show_connections(graph, vertex):
+    print(f"Vertices that {vertex} is connected to:")
+    seen = set()
+    for u, v, weight in graph.edges:
+        if u == vertex and (u, v) not in seen:
+            print(f"{vertex} <--({weight})--> {v}")
+            seen.add((u, v))
+            seen.add((v, u))  # Add the reverse direction to avoid duplicates
+        elif v == vertex and (v, u) not in seen:
+            print(f"{vertex} <--({weight})--> {u}")
+            seen.add((u, v))
+            seen.add((v, u))  # Add the reverse direction to avoid duplicates
+   
+       
 def main():
     vertices = ['10000', '11000', '12000', '13000', '14000']
     data = [
-        ('10000', '11000', 4),
-        ('10000', '11000', 50),
-        #('B', 'A', 4),
-        ('11000', '12000', 1),
-        #('C', 'A', 50),
-        ('12000', '11000', 1),
-       # ('A', 'B', 60)
-        
-
+        ('10000', '11000', 1),
+        ('11000', '10000', 1),
+        ('10000', '14000', 4),
+        ('12000', '10000', 2),
+        ('10000', '12000', 2),
+        ('11000', '13000', 3),
+        ('13000', '11000', 3),
+        ('11000', '14000', 6),
+        ('14000', '11000', 6),
+        ('13000', '14000', 2),
+        ('14000', '13000', 2),
+        ('12000', '13000', 3),
+        ('13000', '14000', 3)
     ]
-    data.append(('11000', '12000', 1))
-    data.append(('12000','11000',1))
-
     
-    # Use a dictionary to track unique edges and their values
     unique_edges = {}
-
     for edge in data:
-        print(edge[0], edge[1],edge[2])
         unique_edges[(edge[0], edge[1])] = edge[2]
         
-    # Convert the dictionary back to a list of tuples
     filtered_data = [(k[0], k[1], v) for k, v in unique_edges.items()]
 
-    print(filtered_data)
     graph = Graph(vertices)
     add_node_add_edge(graph, vertices, filtered_data)
+    show_connections(graph, '11000')  # Call the function to show connections for vertex 11000
     
-    print(graph.edges)
-    bf = BellmanFord(graph, '10000')
+    bf = BellmanFord(graph, '11000')
     bf.run()
     path, total_distance = bf.get_shortest_path('12000')
-    print("Shortest path from 10000 to 12000:", path)
-    print("Total distance from 10000 to 12000:", total_distance)
+    print("Shortest path from 11000 to 12000:", path)
+    print("Total distance from 11000 to 12000:", total_distance)
 
 if __name__ == "__main__":
     main()

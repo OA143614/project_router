@@ -1,7 +1,7 @@
 # Based on https://thecodeninja.net/2014/12/udp-chat-in-python/
 import sys, select, socket
 
-data=[] 
+#data=[] 
 # Read a line. Using select for non blocking reading of sys.stdin
 def getLine():
     i,o,e = select.select([sys.stdin],[],[],0.0001)
@@ -12,7 +12,7 @@ def getLine():
     return False
 #ask IP address and port of remote partner
 host = '127.0.0.1'    #input("Please Enter Remote IP: ")
-port = 10000 #input("Please Enter Remote Port: ")
+port = 65432 #input("Please Enter Remote Port: ")
 
 remoteAddressAndPort = (host, int(port)) # Set the address to send to
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
@@ -84,7 +84,12 @@ def add_node_add_edge(graph, vertices, data):
     for start, end, weight in data:
         add_edge(graph, start, end, weight)
 
-
+def router_cal(graph,go_to_distance):
+    bf = BellmanFord(graph, '11000')
+    bf.run()
+    path, total_distance = bf.get_shortest_path(go_to_distance)
+    print("Shortest path from 11000 to 12000:", path)
+    print("Total distance from 11000 to 12000:", total_distance)
 
 
 vertices = ['10000', '11000', '12000', '13000', '14000'] 
@@ -104,15 +109,16 @@ while 1:
         message, address = clientSocket.recvfrom(20000) # Buffer size is 8192. Change as needed.
         decoded_message = message.decode().rstrip()  # Decode and strip whitespace
         #print(f"Received message: '{decoded_message}'")  # Debugging output
-
+        print(decoded_message=='on')
         # Check the exact length and content of the decoded message
 
-        if decoded_message == 'on':
+        if decoded_message == 'on' or decoded_message == 'off' and address[1] == 65432:
             print("sending")
+           
             for edge_table in data:
                 edge_table_str = f"({edge_table[0]}, {edge_table[1]}, {edge_table[2]})"
-                clientSocket.sendto(edge_table_str.encode(), remoteAddressAndPort)
-                #clientSocket.sendto(edge_table.encode(), remoteAddressAndPort)
+                clientSocket.sendto(edge_table_str.encode(), (host, 12000))  # send routing table to connect host
+            
         else:
             print("recieve")
             print(decoded_message)
@@ -127,7 +133,7 @@ while 1:
                     # If the weight is different, update the edge
                     if existing_edge[2] != edge_data[2]:
                         data[i] = edge_data
-                        clientSocket.sendto("edge_data".encode(),(host, 12000))
+                        #clientSocket.sendto("edge_data".encode(),(host, 12000))
                     break
            
             graph = Graph(vertices)
@@ -138,7 +144,31 @@ while 1:
     except:
         pass
  
-    input = getLine();
-    if(input != False):
-        print ("input is: ",input)
-        clientSocket.sendto(input.encode(), remoteAddressAndPort)
+    
+    user_input = getLine()
+    if user_input != False:
+        if user_input.strip() == 'on':  # Use strip() to remove any extra whitespace
+            print("input is: ", user_input)
+            clientSocket.sendto(user_input.encode(), remoteAddressAndPort)
+        elif user_input.strip() == 'cal':  # Use strip() to remove any extra whitespace
+            to_destination = str(input("Enter destination: ").strip())
+            #print("enter destination: ", to_destination)
+            print(data)
+            graph = Graph(vertices)
+            add_node_add_edge(graph, vertices, data)
+            router_cal(graph, to_destination)
+        elif user_input.strip() == 'msg':  # Use strip() to remove any extra whitespace
+            msg_to_send = str(input("Enter message: ").strip())
+            msg_to_destination = str(input("Enter destination: ").strip())
+            graph = Graph(vertices)
+            add_node_add_edge(graph, vertices, data)
+    
+            #print(graph.edges)
+            bf = BellmanFord(graph, '11000')
+            bf.run()
+            path, total_distance = bf.get_shortest_path(msg_to_destination)
+            print("Shortest path from 11000 to 12000:", path[1])
+            clientSocket.sendto(msg_to_send.encode(),(host, int(path[1])))
+            #print("Total distance from 11000 to 12000:", total_distance)
+
+    

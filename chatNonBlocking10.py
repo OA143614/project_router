@@ -101,7 +101,7 @@ while 1:
     try:
         #print(data)
         
-        message, address = clientSocket.recvfrom(20000) # Buffer size is 8192. Change as needed.
+        message, address = clientSocket.recvfrom(8192) # Buffer size is 8192. Change as needed.
         decoded_message = message.decode().rstrip()  # Decode and strip whitespace
         #print(f"Received message: '{decoded_message}'")  # Debugging output
 
