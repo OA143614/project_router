@@ -235,7 +235,9 @@ while True:
                     print("Data after update:", data)  
                     break  # Exit the loop after receiving the message  
                 except BlockingIOError:
-                    continue  # Continue waiting for the message     
+                    continue  # Continue waiting for the message 
+        
+            
     except BlockingIOError:
         # No data available, continue the loop
         pass

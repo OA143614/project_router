@@ -236,7 +236,27 @@ while True:
                     print("Data after update:", data)  
                     break  # Exit the loop after receiving the message  
                 except BlockingIOError:
-                    continue  # Continue waiting for the message     
+                    continue  # Continue waiting for the message
+
+        elif message == 'shutdown':
+            print('shutdown to all interface')
+            ports = [10000, 13000, 14000]
+            while True:
+                try:
+                    # Append shutdown data to the data list
+                    data.append(('10000', '11000', 100))
+                    data.append(('13000', '11000', 100))
+                    data.append(('14000', '11000', 100))
+            
+                    # Send shutdown message and data to each port
+                    for port in ports:
+                        clientSocket.sendto("recieve".encode(), (host, port))
+                        data_str = str(data)
+                        clientSocket.sendto(data_str.encode(), (host, port))
+                    break
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
+
     except BlockingIOError:
         # No data available, continue the loop
         pass

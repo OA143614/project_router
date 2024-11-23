@@ -25,6 +25,9 @@ clientSocket.setblocking(False)  # Set socket to non-blocking mode
 clientSocket.bind(('', incomingPort))  # Accept Connections on port
 print("This client is accepting connections on port", incomingPort)
 
+#stop route information
+stop_route = []
+
 # Add routing algorithm
 class Graph:
     def __init__(self, vertices):
@@ -198,6 +201,24 @@ while True:
 
         elif message == 'stop':
             status_protocol = 'stop'
+            print("Entering add stop block")
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
+                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
+                    print("Received edge to add:", message)
+                    parts = message.split()
+                    print("access to the port:", parts[1])
+                    stop_route.append(parts[1])
+                    print(stop_route)
+                    update_interface(message)
+                    print("Data after update:", data)
+                    clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    data_str = str(data)
+                    clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
+                    break
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
         elif message == 'show':
             print('router status: ', status_router)
             print('protocol status: ', status_protocol)
