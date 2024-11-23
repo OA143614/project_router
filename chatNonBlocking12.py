@@ -103,7 +103,7 @@ def update_interface(message):
         u, v, weight = parts[0], parts[1], int(parts[2])
         edge_data = (u, v, weight)
         reverse_edge_data = (v, u, weight)
-        print("Updating interface with edge:", edge_data)
+        print("Updating interface with edge:", reverse_edge_data)
         edge_exists = False
         for i, existing_edge in enumerate(data):
             if (existing_edge[0] == edge_data[0] and existing_edge[1] == edge_data[1]) or \
@@ -120,19 +120,38 @@ def update_interface(message):
         print("Updated data:", data)
     except Exception as e:
         print("Error updating interface:", e)
+
+def update_recieve_interface(message):
+    try:
+        # Convert the string representation of the list to an actual list
+        import ast
+        message_list = ast.literal_eval(message)
+        
+        for edge in message_list:
+            u, v, weight = edge
+            edge_data = (u, v, weight)
+            reverse_edge_data = (v, u, weight)
+            print("Updating interface with edge:", edge_data)
+            edge_exists = False
+            for i, existing_edge in enumerate(data):
+                if (existing_edge[0] == edge_data[0] and existing_edge[1] == edge_data[1]) or \
+                   (existing_edge[0] == reverse_edge_data[0] and existing_edge[1] == reverse_edge_data[1]):
+                    edge_exists = True
+                    # If the weight is different, update the edge
+                    if existing_edge[2] != edge_data[2]:
+                        data[i] = edge_data
+                        print("Edge updated:", edge_data)
+                    break
+            if not edge_exists:
+                data.append(edge_data)  # Add new edge if it doesn't exist
+                print("Edge added:", edge_data)
+        print("Updated data:", data)
+    except Exception as e:
+        print("Error updating interface:", e)
         
 # Data
 vertices = ['10000', '11000', '12000', '13000', '14000']
-data = [
-    ('10000', '11000', 1),
-    ('10000', '14000', 4),
-    ('12000', '10000', 2),
-    ('11000', '13000', 3),
-    ('11000', '14000', 6),
-    ('13000', '14000', 2),
-    ('12000', '13000', 3),
-    ('13000', '14000', 2)
-]
+data = [('12000', '13000', 2) ]
 
 status_router = 'off'
 status_protocol = 'stop'
@@ -147,7 +166,24 @@ while True:
         elif message == 'off':
             status_router = 'off'
         elif message == 'start':
-            status_protocol = 'start'
+            print("Entering add start block")
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
+                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
+                    print("Received edge to add:", message)
+                    parts = message.split()
+                    print("access to the port:", parts[1])
+                    update_interface(message)
+                    print("Data after update:", data)
+                    clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    data_str = str(data)
+                    clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
+                    break
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
+        #elif message == 'receive':
+
         elif message == 'stop':
             status_protocol = 'stop'
         elif message == 'show':
@@ -161,18 +197,36 @@ while True:
             path, total_distance = bf.get_shortest_path('12000')
             print("Shortest path from 11000 to 12000:", path)
             print("Total distance from 11000 to 12000:", total_distance)
-        elif message == 'add':
+        elif message == 'recieve':
             print("Entering add block")
             while True:
                 try:
                     message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
                     message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
+                    
                     print("Received edge to add:", message)
-                    update_interface(message)
+                    update_recieve_interface(message)
                     print("Data after update:", data)
+                    clientSocket.sendto("update".encode(), (host, address[1]))
+                    data_str = str(data)
+                    clientSocket.sendto(data_str.encode(), (host, address[1]))
                     break  # Exit the loop after receiving the message
                 except BlockingIOError:
                     continue  # Continue waiting for the message
+            
+        elif message == 'update':
+            print("Entering add block")
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
+                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
+                    
+                    print("Received edge to add:", message)
+                    update_recieve_interface(message)
+                    print("Data after update:", data) 
+                    break  # Exit the loop after receiving the message
+                except BlockingIOError:
+                    continue  # Continue waiting for the message        
     except BlockingIOError:
         # No data available, continue the loop
         pass
