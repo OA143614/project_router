@@ -182,7 +182,17 @@ while True:
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
-        #elif message == 'receive':
+        elif message == 'allinterface':
+            print('start all interface')
+            while True:
+                try:
+                    print("Data after update:", data)
+                    clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    data_str = str(data)
+                    clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
+                    break
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
 
         elif message == 'stop':
             status_protocol = 'stop'

@@ -19,7 +19,7 @@ clientSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Make Socke
 
 # s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Allow incoming broadcasts
 
-incomingPort = 11000
+incomingPort = 14000
 
 clientSocket.setblocking(False)  # Set socket to non-blocking mode
 clientSocket.bind(('', incomingPort))  # Accept Connections on port
@@ -151,7 +151,7 @@ def update_recieve_interface(message):
 
 # Data
 vertices = ['10000', '11000', '12000', '13000', '14000']
-data = [('10000', '11000', 1)]
+data = [('14000', '10000', 4)]
     
 status_router = 'off'
 status_protocol = 'stop'
@@ -184,17 +184,16 @@ while True:
                     continue  # Continue waiting for the message
         elif message == 'allinterface':
             print('start all interface')
-            ports = [11000, 12000, 14000]
             while True:
                 try:
                     print("Data after update:", data)
-                    for port in ports:
-                        clientSocket.sendto("recieve".encode(), (host, port))
-                        data_str = str(data)
-                        clientSocket.sendto(data_str.encode(), (host, port))
+                    clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    data_str = str(data)
+                    clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
+
         elif message == 'stop':
             status_protocol = 'stop'
         elif message == 'show':
