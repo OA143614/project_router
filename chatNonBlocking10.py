@@ -86,17 +86,19 @@ def add_node_add_edge(graph, vertices, data):
         add_edge(graph, start, end, weight)
 
 def show_connections(graph, vertex):
-    print(f"Vertices that {vertex} is connected to:")
+    output = []
+    output.append(f"Vertices that {vertex} is connected to:")
     seen = set()
     for u, v, weight in graph.edges:
         if u == vertex and (u, v) not in seen:
-            print(f"{vertex} <--({weight})--> {v}")
+            output.append(f"{vertex} <--({weight})--> {v}")
             seen.add((u, v))
             seen.add((v, u))  # Add the reverse direction to avoid duplicates
         elif v == vertex and (v, u) not in seen:
-            print(f"{vertex} <--({weight})--> {u}")
+            output.append(f"{vertex} <--({weight})--> {u}")
             seen.add((u, v))
             seen.add((v, u))  # Add the reverse direction to avoid duplicates
+    return "\n".join(output) if output else f"No connections found for vertex {vertex}"
 
 def update_interface(message):
     try:
@@ -154,111 +156,165 @@ def update_recieve_interface(message):
 
 # Data
 vertices = ['10000', '11000', '12000', '13000', '14000']
-data = []
+data = [('10000', '11000', 100),
+        ('10000', '14000', 100),
+        ('10000', '12000', 100)
+        ]
     
 status_router = 'off'
+status_protocol = 'stop routing'
+
+def log_routing_advertisement(message, direction):
+    with open("routing_log.txt", "a") as log_file:
+        log_file.write(f"{direction}: {message}\n")
+
+def display_routing_advertisements():
+    with open("routing_log.txt", "r") as log_file:
+        return log_file.read()
+
+# Initialize variables
+data = []
+status_router = 'off'
 status_protocol = 'stop'
+display_ads = False  # Flag to control display of advertisements
+# Clear the routing log file at the start
+open("routing_log.txt", "w").close()
 
 while True:
     try:
         message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
         message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
         print("Received message:", message)
-        if message == 'on':
-            status_router = 'on'
-        elif message == 'off':
-            status_router = 'off'
-        elif message == 'start':
-            print("Entering add start block")
+        log_routing_advertisement(message, "Incoming")
+
+        if message == 'start':
+            status_protocol = 'start routing one interface'
             while True:
                 try:
-                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
-                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
                     print("Received edge to add:", message)
                     parts = message.split()
-                    print("access to the port:", parts[1])
+                    print("Access to the port:", parts[1])
                     update_interface(message)
                     print("Data after update:", data)
                     clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    log_routing_advertisement("recieve", "Outgoing")
                     data_str = str(data)
                     clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
+                    log_routing_advertisement(data_str, "Outgoing")
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
+
         elif message == 'allinterface':
-            print('start all interface')
+            status_protocol = 'start routing all interface'
             ports = [11000, 12000, 14000]
             while True:
                 try:
                     print("Data after update:", data)
                     for port in ports:
-                        clientSocket.sendto("recieve".encode(), (host, port))
-                        data_str = str(data)
-                        clientSocket.sendto(data_str.encode(), (host, port))
+                        if port not in stop_route:
+                            clientSocket.sendto("recieve".encode(), (host, port))
+                            log_routing_advertisement("recieve", "Outgoing")
+                            data_str = str(data)
+                            clientSocket.sendto(data_str.encode(), (host, port))
+                            log_routing_advertisement(data_str, "Outgoing")
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 
         elif message == 'stop':
-            status_protocol = 'stop'
+            status_protocol = 'stop routing'
             print("Entering add stop block")
             while True:
                 try:
-                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
-                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
                     print("Received edge to add:", message)
                     parts = message.split()
-                    print("access to the port:", parts[1])
+                    print("Access to the port:", parts[1])
                     stop_route.append(parts[1])
                     print(stop_route)
                     update_interface(message)
                     print("Data after update:", data)
                     clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    log_routing_advertisement("recieve", "Outgoing")
                     data_str = str(data)
                     clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
+                    log_routing_advertisement(data_str, "Outgoing")
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
+
         elif message == 'show':
-            print('router status: ', status_router)
-            print('protocol status: ', status_protocol)
+            # Convert data to string and send to the client
+            data_str = str(data)
+            clientSocket.sendto(data_str.encode(), (host, address[1]))
+            log_routing_advertisement(data_str, "Outgoing")
+    
+            # Create the graph and add nodes and edges
             graph = Graph(vertices)
             add_node_add_edge(graph, vertices, data)
-            show_connections(graph, '12000')  # Call the function to show connections for vertex 12000
-            bf = BellmanFord(graph, '11000')
-            bf.run()
-            path, total_distance = bf.get_shortest_path('12000')
-            print("Shortest path from 11000 to 12000:", path)
-            print("Total distance from 11000 to 12000:", total_distance)
+    
+            # Show connections for vertex 10000 (or 11000 if that's the correct one)
+            connections = show_connections(graph, '10000')  # Adjust vertex as needed
+            clientSocket.sendto(connections.encode(), (host, address[1]))
+            log_routing_advertisement(connections, "Outgoing")
+
+            # Show status of the protocol
+            clientSocket.sendto(status_protocol.encode(), (host, address[1]))
+            log_routing_advertisement(status_protocol, "Outgoing")
+
+            # Send routing advertisements to the client
+            if display_ads:
+                ads = display_routing_advertisements()
+                clientSocket.sendto(ads.encode(), (host, address[1]))
+                log_routing_advertisement(ads, "Outgoing")
+
         elif message == 'recieve':
             print("Entering add block")
             while True:
                 try:
-                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
-                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
-                    
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
                     print("Received edge to add:", message)
                     update_recieve_interface(message)
                     print("Data after update:", data)
                     clientSocket.sendto("update".encode(), (host, address[1]))
+                    log_routing_advertisement("update", "Outgoing")
                     data_str = str(data)
                     clientSocket.sendto(data_str.encode(), (host, address[1]))
+                    log_routing_advertisement(data_str, "Outgoing")
                     break  # Exit the loop after receiving the message
                 except BlockingIOError:
                     continue  # Continue waiting for the message
+
         elif message == 'update':
             print("Entering add block")
             while True:
                 try:
-                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
-                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
-                    
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
+                    log_routing_advertisement(message, "Incoming")
                     print("Received edge to add:", message)
                     update_recieve_interface(message)
-                    print("Data after update:", data)  
-                    break  # Exit the loop after receiving the message  
+                    print("Data after update:", data)
+                    break  # Exit the loop after receiving the message
                 except BlockingIOError:
-                    continue  # Continue waiting for the message     
+                    continue  # Continue waiting for the message
+
+        elif message == 'log_start_display':
+            display_ads = True
+            clientSocket.sendto("Started displaying routing advertisements.".encode(), (host, address[1]))
+        elif message == 'log_stop_display':
+            display_ads = False
+            clientSocket.sendto("Stopped displaying routing advertisements.".encode(), (host, address[1]))
+        elif message == 'log':
+            # Send routing advertisements to the client
+            ads = display_routing_advertisements()
+            clientSocket.sendto(ads.encode(), (host, address[1]))
+            log_routing_advertisement(ads, "Outgoing")
     except BlockingIOError:
         # No data available, continue the loop
         pass
