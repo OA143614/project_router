@@ -19,7 +19,7 @@ clientSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Make Socke
 
 # s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Allow incoming broadcasts
 
-incomingPort = 14000
+incomingPort = 13000
 
 clientSocket.setblocking(False)  # Set socket to non-blocking mode
 clientSocket.bind(('', incomingPort))  # Accept Connections on port
@@ -58,7 +58,7 @@ class BellmanFord:
                 print("Negative cycle detected")
                 return
 
-        
+       
 
     def get_shortest_path(self, destination):
         if self.distances[destination] == float('inf'):
@@ -187,11 +187,11 @@ status_protocol = 'stop routing'
 
 #log display
 def log_routing_advertisement(message, direction):
-    with open("routing_log14.txt", "a") as log_file:
+    with open("routing_log13.txt", "a") as log_file:
         log_file.write(f"{direction}: {message}\n")
 
 def display_routing_advertisements():
-    with open("routing_log14.txt", "r") as log_file:
+    with open("routing_log13.txt", "r") as log_file:
         return log_file.read()
 
 # Initialize variables
@@ -199,7 +199,7 @@ status_router = 'off'
 status_protocol = 'stop'
 display_ads = False  # Flag to control display of advertisements
 # Clear the routing log file at the start
-open("routing_log14.txt", "w").close()
+open("routing_log13.txt", "w").close()
 
 while True:
     
@@ -231,7 +231,7 @@ while True:
         #routing all interfaces command
         elif message == 'allinterface':
             status_protocol = 'start routing all interface'
-            ports = [10000, 11000, 13000]
+            ports = [11000, 12000, 14000]
             while True:
                 try:
                     for port in ports:

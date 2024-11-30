@@ -1,4 +1,4 @@
-import sys, select, socket
+import sys, select, socket,time
 
 # Read a line. Using select for non-blocking reading of sys.stdin
 def getLine():
@@ -24,6 +24,9 @@ incomingPort = 11000
 clientSocket.setblocking(False)  # Set socket to non-blocking mode
 clientSocket.bind(('', incomingPort))  # Accept Connections on port
 print("This client is accepting connections on port", incomingPort)
+
+#stop route information
+stop_route = []
 
 # Add routing algorithm
 class Graph:
@@ -55,7 +58,7 @@ class BellmanFord:
                 print("Negative cycle detected")
                 return
 
-        print("Shortest distances:", self.distances)
+        
 
     def get_shortest_path(self, destination):
         if self.distances[destination] == float('inf'):
@@ -83,17 +86,19 @@ def add_node_add_edge(graph, vertices, data):
         add_edge(graph, start, end, weight)
 
 def show_connections(graph, vertex):
-    print(f"Vertices that {vertex} is connected to:")
+    output = []
+    output.append(f"Vertices that {vertex} is connected to:")
     seen = set()
     for u, v, weight in graph.edges:
         if u == vertex and (u, v) not in seen:
-            print(f"{vertex} <--({weight})--> {v}")
+            output.append(f"{vertex} <--({weight})--> {v}")
             seen.add((u, v))
             seen.add((v, u))  # Add the reverse direction to avoid duplicates
         elif v == vertex and (v, u) not in seen:
-            print(f"{vertex} <--({weight})--> {u}")
+            output.append(f"{vertex} <--({weight})--> {u}")
             seen.add((u, v))
             seen.add((v, u))  # Add the reverse direction to avoid duplicates
+    return "\n".join(output) if output else f"No connections found for vertex {vertex}"
 
 def update_interface(message):
     try:
@@ -103,7 +108,6 @@ def update_interface(message):
         u, v, weight = parts[0], parts[1], int(parts[2])
         edge_data = (u, v, weight)
         reverse_edge_data = (v, u, weight)
-        print("Updating interface with edge:", edge_data)
         edge_exists = False
         for i, existing_edge in enumerate(data):
             if (existing_edge[0] == edge_data[0] and existing_edge[1] == edge_data[1]) or \
@@ -116,22 +120,42 @@ def update_interface(message):
                 break
         if not edge_exists:
             data.append(edge_data)  # Add new edge if it doesn't exist
-            print("Edge added:", edge_data)
-        print("Updated data:", data)
     except Exception as e:
         print("Error updating interface:", e)
+
+def finding_path(message):
+    try:
+        parts = message.split()
+        if len(parts) != 2:
+            raise ValueError("Invalid message format")
+        
+        source, destination = parts
+        graph = Graph(vertices)
+        add_node_add_edge(graph, vertices, data)
+        
+        bf = BellmanFord(graph, source)
+        bf.run()
+        
+        path, total_distance = bf.get_shortest_path(destination)
+        
+        sent_path = f"Shortest path from {source} to {destination}: {path}"
+        clientSocket.sendto(sent_path.encode(), (host, 65432))
+        
+        sent_total_path = f"Total distance from {source} to {destination}: {total_distance}"
+        clientSocket.sendto(sent_total_path.encode(), (host, 65432))
+    
+    except Exception as e:
+        print("Error finding path:", e)
 
 def update_recieve_interface(message):
     try:
         # Convert the string representation of the list to an actual list
         import ast
         message_list = ast.literal_eval(message)
-        
         for edge in message_list:
             u, v, weight = edge
             edge_data = (u, v, weight)
             reverse_edge_data = (v, u, weight)
-            print("Updating interface with edge:", edge_data)
             edge_exists = False
             for i, existing_edge in enumerate(data):
                 if (existing_edge[0] == edge_data[0] and existing_edge[1] == edge_data[1]) or \
@@ -140,128 +164,179 @@ def update_recieve_interface(message):
                     # If the weight is different, update the edge
                     if existing_edge[2] != edge_data[2]:
                         data[i] = edge_data
-                        print("Edge updated:", edge_data)
                     break
             if not edge_exists:
                 data.append(edge_data)  # Add new edge if it doesn't exist
-                print("Edge added:", edge_data)
-        print("Updated data:", data)
     except Exception as e:
         print("Error updating interface:", e)
 
 # Data
 vertices = ['10000', '11000', '12000', '13000', '14000']
-data = [('10000', '11000', 1)]
+data = [('10000', '11000', 1),
+        ('10000', '14000', 4),
+        ('12000', '10000', 2),
+        ('11000', '13000', 3),
+        ('11000', '14000', 6),
+        ('13000', '14000', 2),
+        ('12000', '13000', 3),
+        ('13000', '14000', 2)
+        ]
     
 status_router = 'off'
+status_protocol = 'stop routing'
+
+#log display
+def log_routing_advertisement(message, direction):
+    with open("routing_log11.txt", "a") as log_file:
+        log_file.write(f"{direction}: {message}\n")
+
+def display_routing_advertisements():
+    with open("routing_log11.txt", "r") as log_file:
+        return log_file.read()
+
+# Initialize variables
+status_router = 'off'
 status_protocol = 'stop'
+display_ads = False  # Flag to control display of advertisements
+# Clear the routing log file at the start
+open("routing_log11.txt", "w").close()
 
 while True:
+    
+    #listening and recieving the message from other hosts
     try:
         message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
         message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
         print("Received message:", message)
-        if message == 'on':
-            status_router = 'on'
-        elif message == 'off':
-            status_router = 'off'
-        elif message == 'start':
-            print("Entering add start block")
+        log_routing_advertisement(message, "Incoming")
+        
+        #when recieving start command
+        if message == 'start':
+            status_protocol = 'start routing one interface'
             while True:
                 try:
-                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
-                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
-                    print("Received edge to add:", message)
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
                     parts = message.split()
-                    print("access to the port:", parts[1])
                     update_interface(message)
-                    print("Data after update:", data)
                     clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    log_routing_advertisement("recieve", "Outgoing")
                     data_str = str(data)
                     clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
+                    log_routing_advertisement(data_str, "Outgoing")
                     break
-                except BlockingIOError:
-                    continue  # Continue waiting for the message
-        elif message == 'allinterface':
-            print('start all interface')
-            ports = [11000, 12000, 14000]
-            while True:
-                try:
-                    print("Data after update:", data)
-                    for port in ports:
-                        clientSocket.sendto("recieve".encode(), (host, port))
-                        data_str = str(data)
-                        clientSocket.sendto(data_str.encode(), (host, port))
-                    break
-                except BlockingIOError:
-                    continue  # Continue waiting for the message
-        elif message == 'stop':
-            status_protocol = 'stop'
-        elif message == 'show':
-            print('router status: ', status_router)
-            print('protocol status: ', status_protocol)
-            graph = Graph(vertices)
-            add_node_add_edge(graph, vertices, data)
-            show_connections(graph, '12000')  # Call the function to show connections for vertex 12000
-            bf = BellmanFord(graph, '11000')
-            bf.run()
-            path, total_distance = bf.get_shortest_path('12000')
-            print("Shortest path from 11000 to 12000:", path)
-            print("Total distance from 11000 to 12000:", total_distance)
-        elif message == 'recieve':
-            print("Entering add block")
-            while True:
-                try:
-                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
-                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
-                    
-                    print("Received edge to add:", message)
-                    update_recieve_interface(message)
-                    print("Data after update:", data)
-                    clientSocket.sendto("update".encode(), (host, address[1]))
-                    data_str = str(data)
-                    clientSocket.sendto(data_str.encode(), (host, address[1]))
-                    break  # Exit the loop after receiving the message
-                except BlockingIOError:
-                    continue  # Continue waiting for the message
-        elif message == 'update':
-            print("Entering add block")
-            while True:
-                try:
-                    message, address = clientSocket.recvfrom(8192)  # Buffer size is 8192. Change as needed.
-                    message = message.decode().rstrip()  # Decode the message and strip any trailing whitespace.
-                    
-                    print("Received edge to add:", message)
-                    update_recieve_interface(message)
-                    print("Data after update:", data)  
-                    break  # Exit the loop after receiving the message  
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 
-        elif message == 'shutdown':
-            print('shutdown to all interface')
+        #routing all interfaces command
+        elif message == 'allinterface':
+            status_protocol = 'start routing all interface'
             ports = [10000, 13000, 14000]
             while True:
                 try:
-                    # Append shutdown data to the data list
-                    data.append(('10000', '11000', 100))
-                    data.append(('13000', '11000', 100))
-                    data.append(('14000', '11000', 100))
-            
-                    # Send shutdown message and data to each port
                     for port in ports:
-                        clientSocket.sendto("recieve".encode(), (host, port))
-                        data_str = str(data)
-                        clientSocket.sendto(data_str.encode(), (host, port))
+                        if port not in stop_route:
+                            clientSocket.sendto("recieve".encode(), (host, port))
+                            log_routing_advertisement("recieve", "Outgoing")
+                            data_str = str(data)
+                            clientSocket.sendto(data_str.encode(), (host, port))
+                            log_routing_advertisement(data_str, "Outgoing")
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 
+        #stopping protocol
+        elif message == 'stop':
+            status_protocol = 'stop routing'
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
+                    parts = message.split()
+                    stop_route.append(parts[1])
+                    update_interface(message)
+                    clientSocket.sendto("recieve".encode(), (host, int(parts[1])))
+                    log_routing_advertisement("recieve", "Outgoing")
+                    data_str = str(data)
+                    clientSocket.sendto(data_str.encode(), (host, int(parts[1])))
+                    log_routing_advertisement(data_str, "Outgoing")
+                    break
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
+
+        #send display when cli send show command
+        elif message == 'show':
+            # Convert data to string and send to the client
+            data_str = str(data)
+            clientSocket.sendto(data_str.encode(), (host, address[1]))
+            log_routing_advertisement(data_str, "Outgoing")
+    
+            # Create the graph and add nodes and edges
+            graph = Graph(vertices)
+            add_node_add_edge(graph, vertices, data)
+    
+            # Show connections for vertex 10000 (or 11000 if that's the correct one)
+            for vertex in ['10000', '11000', '12000','13000','14000']:
+                connections = show_connections(graph, vertex)
+                clientSocket.sendto(connections.encode(), (host, address[1]))
+            log_routing_advertisement(connections, "Outgoing")
+
+            # Show status of the protocol
+            sent_status = 'status protocol is '+ status_protocol
+            clientSocket.sendto(sent_status.encode(), (host, address[1]))
+            log_routing_advertisement(status_protocol, "Outgoing")
+
+            
+        #recieve new table from routers that it connected and send updated table to outgoing table
+        elif message == 'recieve':
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
+                    update_recieve_interface(message)
+                    clientSocket.sendto("update".encode(), (host, address[1]))
+                    log_routing_advertisement("update", "Outgoing")
+                    data_str = str(data)
+                    clientSocket.sendto(data_str.encode(), (host, address[1]))
+                    log_routing_advertisement(data_str, "Outgoing")
+                    break  # Exit the loop after receiving the message
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
+
+        #getting updated table from router that connecting
+        elif message == 'update':
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
+                    log_routing_advertisement(message, "Incoming")
+                    update_recieve_interface(message)
+                    break  # Exit the loop after receiving the message
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
+
+        elif message == 'path':
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
+                    parts = message.split()
+                    finding_path(message)
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
+
+
+        #handling log display
+        elif message == 'log_start_display':
+            display_ads = True
+            clientSocket.sendto("Started displaying routing advertisements.".encode(), (host, address[1]))
+            print(display_routing_advertisements())
+        elif message == 'log_stop_display':
+            display_ads = False
+            clientSocket.sendto("Stopped displaying routing advertisements.".encode(), (host, address[1]))
+        if display_ads:
+            print(display_routing_advertisements())
+        time.sleep(1)  # Sleep for a short period to avoid busy-waiting
     except BlockingIOError:
         # No data available, continue the loop
         pass
-
-    input = getLine()
-    if input != False:
-        print("input is:", input)
-        clientSocket.sendto(input.encode(), remoteAddressAndPort)

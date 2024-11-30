@@ -43,7 +43,8 @@ while True:
         user_input = input("Enter command: ")
         if user_input == 'ls':
             print(router_address)
-        
+
+        #using start command  start #port enter then source destination weight
         elif user_input.startswith('start'):
             print("input is:", user_input)
             delimitedInput = user_input.split(' ')
@@ -63,6 +64,7 @@ while True:
             remoteAddressAndPort = ('127.0.0.1', int(remotePort))  # Set the address to send to
             clientSocket.sendto(start_route_command.encode(), remoteAddressAndPort)
 
+        #using start command  stop #port enter then source destination 1000
         elif user_input.startswith('stop'):
             print("input is:", user_input)
             delimitedInput = user_input.split(' ')
@@ -82,7 +84,25 @@ while True:
             remoteAddressAndPort = ('127.0.0.1', int(remotePort))  # Set the address to send to
             clientSocket.sendto(start_route_command.encode(), remoteAddressAndPort)
 
-        
+        elif user_input.startswith('path'):
+            print("input is:", user_input)
+            delimitedInput = user_input.split(' ')
+            print(delimitedInput)
+            command, remotePort = delimitedInput
+            remoteAddressAndPort = ('127.0.0.1', int(remotePort))  # Set the address to send to
+            clientSocket.sendto(command.encode(), remoteAddressAndPort)
+            path_route_command = input("Enter command: ")
+            print("input is:", path_route_command)
+            delimitedInput = path_route_command.split(' ')
+            print(delimitedInput)
+            source, destination = delimitedInput
+            print("source:", source)
+            print("destination:", destination)
+            #print("Remote port:", remotePort)
+            remoteAddressAndPort = ('127.0.0.1', int(remotePort))  # Set the address to send to
+            clientSocket.sendto(path_route_command.encode(), remoteAddressAndPort)
+
+        #command for allinterface 
         else:
             print("input is:", user_input)
             delimitedInput = user_input.split(' ')
