@@ -172,12 +172,12 @@ def update_recieve_interface(message):
 
 # Data
 vertices = ['10000', '11000', '12000', '13000', '14000']
-data = [('10000', '11000', 1),
+data = [
+        ('10000', '11000', 1),
         ('10000', '14000', 4),
         ('12000', '10000', 2),
         ('11000', '13000', 3),
         ('11000', '14000', 6),
-        ('13000', '14000', 2),
         ('12000', '13000', 3),
         ('13000', '14000', 2)
         ]
@@ -276,7 +276,7 @@ while True:
             add_node_add_edge(graph, vertices, data)
     
             # Show connections for vertex 10000 (or 11000 if that's the correct one)
-            for vertex in ['10000', '11000', '12000','13000','14000']:
+            for vertex in ['12000']:
                 connections = show_connections(graph, vertex)
                 clientSocket.sendto(connections.encode(), (host, address[1]))
             log_routing_advertisement(connections, "Outgoing")
