@@ -1,1 +1,28 @@
-Incoming: path
+Incoming: start, Address: 65432
+Incoming: show, Address: 65432
+Outgoing: [], Address: 65432
+Outgoing: Vertices that 12000 is connected to:, Address: 65432
+Outgoing: status protocol is start, Address: 65432
+Incoming: show, Address: 65432
+Outgoing: [('10000', '11000', 100), ('12000', '10000', 100), ('10000', '14000', 100)], Address: 65432
+Outgoing: Vertices that 10000 is connected to:
+10000 <--(100)--> 11000
+10000 <--(100)--> 14000
+10000 <--(100)--> 12000, Address: 65432
+Outgoing: status protocol is start, Address: 65432
+Incoming: rounting, Address: 65432
+Incoming: routing, Address: 65432
+Outgoing: recieve, Address: 12000
+Incoming: recieve, Address: 10000
+Outgoing: [('10000', '11000', 100), ('10000', '12000', 2), ('10000', '14000', 100)], Address: 12000
+Outgoing: update, Address: 10000
+Outgoing: [('10000', '11000', 100), ('10000', '12000', 2), ('10000', '14000', 100)], Address: 10000
+Incoming: update, Address: 12000
+Incoming: [('10000', '11000', 100), ('10000', '12000', 2), ('10000', '14000', 100)], Address: 12000
+Incoming: show, Address: 65432
+Outgoing: [('10000', '11000', 100), ('10000', '12000', 2), ('10000', '14000', 100)], Address: 65432
+Outgoing: Vertices that 10000 is connected to:
+10000 <--(100)--> 11000
+10000 <--(100)--> 14000
+10000 <--(2)--> 12000, Address: 65432
+Outgoing: status protocol is start, Address: 65432

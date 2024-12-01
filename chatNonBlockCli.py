@@ -45,7 +45,7 @@ while True:
             print(router_address)
 
         #using start command  start #port enter then source destination weight
-        elif user_input.startswith('start'):
+        elif user_input.startswith('routing'):
             print("input is:", user_input)
             delimitedInput = user_input.split(' ')
             print(delimitedInput)
@@ -65,7 +65,7 @@ while True:
             clientSocket.sendto(start_route_command.encode(), remoteAddressAndPort)
 
         #using start command  stop #port enter then source destination 1000
-        elif user_input.startswith('stop'):
+        elif user_input.startswith('deactive'):
             print("input is:", user_input)
             delimitedInput = user_input.split(' ')
             print(delimitedInput)
