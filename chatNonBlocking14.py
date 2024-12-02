@@ -341,11 +341,12 @@ while True:
                     message, address = clientSocket.recvfrom(8192)
                     message = message.decode().rstrip()
                     update_recieve_interface(message)
-                    clientSocket.sendto("update".encode(), (host, address[1]))
-                    log_routing_advertisement("update", "Outgoing", address[1])
-                    data_str = str(data)
-                    clientSocket.sendto(data_str.encode(), (host, address[1]))
-                    log_routing_advertisement(data_str, "Outgoing", address[1])
+                    for port in ports:
+                        clientSocket.sendto("update".encode(), (host,  int(port)))
+                        log_routing_advertisement("update", "Outgoing",  int(port))
+                        data_str = str(data)
+                        clientSocket.sendto(data_str.encode(), (host,  int(port)))
+                        log_routing_advertisement(data_str, "Outgoing",  int(port))
                     break  # Exit the loop after receiving the message
                 except BlockingIOError:
                     continue  # Continue waiting for the message
