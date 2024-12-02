@@ -84,6 +84,25 @@ while True:
             remoteAddressAndPort = ('127.0.0.1', int(remotePort))  # Set the address to send to
             clientSocket.sendto(start_route_command.encode(), remoteAddressAndPort)
 
+        elif user_input.startswith('active'):
+            print("input is:", user_input)
+            delimitedInput = user_input.split(' ')
+            print(delimitedInput)
+            command, remotePort = delimitedInput
+            remoteAddressAndPort = ('127.0.0.1', int(remotePort))  # Set the address to send to
+            clientSocket.sendto(command.encode(), remoteAddressAndPort)
+            start_route_command = input("Enter command: ")
+            print("input is:", start_route_command)
+            delimitedInput = start_route_command.split(' ')
+            print(delimitedInput)
+            source, destination, weight = delimitedInput
+            print("source:", source)
+            print("destination:", destination)
+            print("weight:", weight)
+            #print("Remote port:", remotePort)
+            remoteAddressAndPort = ('127.0.0.1', int(remotePort))  # Set the address to send to
+            clientSocket.sendto(start_route_command.encode(), remoteAddressAndPort)
+
         elif user_input.startswith('path'):
             print("input is:", user_input)
             delimitedInput = user_input.split(' ')

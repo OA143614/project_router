@@ -226,7 +226,7 @@ while True:
                         data_str = str(data)
                         clientSocket.sendto(data_str.encode(), (host, port))
                         log_routing_advertisement(data_str, "Outgoing",port)
-                        break
+                    break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 
@@ -269,6 +269,26 @@ while True:
                     message = message.decode().rstrip()
                     parts = message.split()
                     stop_route.append(parts[1])
+                    update_interface(message)
+                    for port in ports:
+                        if port not in stop_route:
+                            clientSocket.sendto("recieve".encode(), (host, port))
+                            log_routing_advertisement("recieve", "Outgoing",port)
+                            data_str = str(data)
+                            clientSocket.sendto(data_str.encode(), (host, port))
+                            log_routing_advertisement(data_str, "Outgoing",port)
+                    break
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
+
+        #active protocol
+        elif message == 'active'and status_protocol == 'start':
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
+                    parts = message.split()
+                    stop_route.remove(parts[1])
                     update_interface(message)
                     for port in ports:
                         if port not in stop_route:
@@ -339,6 +359,7 @@ while True:
                     message = message.decode().rstrip()
                     parts = message.split()
                     finding_path(message)
+                    break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 

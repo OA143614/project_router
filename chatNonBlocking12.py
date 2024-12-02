@@ -336,6 +336,7 @@ while True:
                     message = message.decode().rstrip()
                     parts = message.split()
                     finding_path(message)
+                    break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 

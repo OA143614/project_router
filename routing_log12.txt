@@ -1,21 +1,16 @@
-Incoming: recieve
-Outgoing: update
-Outgoing: [('10000', '12000', 2), ('10000', '11000', 100), ('10000', '14000', 100)]
-Incoming: recieve
-Outgoing: update
-Outgoing: [('10000', '12000', 2), ('10000', '11000', 100), ('10000', '14000', 100)]
-Incoming: recieve
-Outgoing: update
-Outgoing: [('10000', '12000', 2), ('10000', '11000', 100), ('10000', '14000', 100)]
-Incoming: recieve
-Outgoing: update
-Outgoing: [('10000', '12000', 2), ('10000', '11000', 1), ('10000', '14000', 4)]
-Incoming: recieve
-Outgoing: update
-Outgoing: [('10000', '12000', 2), ('10000', '11000', 1), ('10000', '14000', 4)]
-Incoming: recieve
-Outgoing: update
-Outgoing: [('10000', '12000', 2), ('10000', '11000', 100), ('10000', '14000', 100)]
-Incoming: recieve
-Outgoing: update
-Outgoing: [('10000', '12000', 2), ('10000', '11000', 1), ('10000', '14000', 4)]
+Incoming: start, Address: 65432
+Incoming: recieve, Address: 10000
+Outgoing: update, Address: 10000
+Outgoing: [('10000', '12000', 2)], Address: 10000
+Incoming: recieve, Address: 10000
+Outgoing: update, Address: 10000
+Outgoing: [('10000', '12000', 2)], Address: 10000
+Incoming: recieve, Address: 10000
+Outgoing: update, Address: 10000
+Outgoing: [('10000', '12000', 2), ('10000', '14000', 6), ('11000', '14000', 6), ('13000', '14000', 2)], Address: 10000
+Incoming: log_start_display, Address: 65432
+Incoming: show, Address: 65432
+Outgoing: [('10000', '12000', 2), ('10000', '14000', 6), ('11000', '14000', 6), ('13000', '14000', 2)], Address: 65432
+Outgoing: Vertices that 12000 is connected to:
+12000 <--(2)--> 10000, Address: 65432
+Outgoing: status protocol is start, Address: 65432

@@ -177,7 +177,7 @@ data = [('10000', '14000', 4),
         ('13000', '14000', 2)
         ]
 
-ports = [10000, 11000, 13000]
+ports = ['10000', '11000', '13000']
     
 
 #log display
@@ -211,8 +211,10 @@ while True:
         
         #when recieving start command
         if message == 'start':
+            print('start')
             status_protocol = 'start'
         elif message == 'stop':
+            print('stop')
             status_protocol = 'stop'
             data = [('10000', '14000', 100),
                     ('11000', '14000', 100),
@@ -222,16 +224,18 @@ while True:
             while True:
                 try:
                     for port in ports:
-                        clientSocket.sendto("recieve".encode(), (host, port))
-                        log_routing_advertisement("recieve", "Outgoing",port)
+                        clientSocket.sendto("recieve".encode(), (host, int(port)))
+                        log_routing_advertisement("recieve", "Outgoing",int(port))
                         data_str = str(data)
-                        clientSocket.sendto(data_str.encode(), (host, port))
-                        log_routing_advertisement(data_str, "Outgoing",port)
+                        clientSocket.sendto(data_str.encode(), (host, int(port)))
+                        log_routing_advertisement(data_str, "Outgoing",int(port))
+                        
                         break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 
         elif message == 'routing' and status_protocol == 'start':
+            print('routing')
             while True:
                 try:
                     message, address = clientSocket.recvfrom(8192)
@@ -249,21 +253,23 @@ while True:
 
         #routing all interfaces command
         elif message == 'allinterface' and status_protocol == 'start':
+            print('allinter')
             while True:
                 try:
                     for port in ports:
                         if port not in stop_route:
-                            clientSocket.sendto("recieve".encode(), (host, port))
-                            log_routing_advertisement("recieve", "Outgoing",port)
+                            clientSocket.sendto("recieve".encode(), (host, int(port)))
+                            log_routing_advertisement("recieve", "Outgoing",int(port))
                             data_str = str(data)
-                            clientSocket.sendto(data_str.encode(), (host, port))
-                            log_routing_advertisement(data_str, "Outgoing",port)
+                            clientSocket.sendto(data_str.encode(), (host, int(port)))
+                            log_routing_advertisement(data_str, "Outgoing",int(port))
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 
-        #stopping protocol
+        #stopping protocol 14000 10000 1000
         elif message == 'deactive'and status_protocol == 'start':
+            print('deactive')
             while True:
                 try:
                     message, address = clientSocket.recvfrom(8192)
@@ -272,19 +278,41 @@ while True:
                     stop_route.append(parts[1])
                     update_interface(message)
                     for port in ports:
+                        print(port)
                         if port not in stop_route:
-                            clientSocket.sendto("recieve".encode(), (host, port))
-                            log_routing_advertisement("recieve", "Outgoing",port)
+                            print(port)
+                            clientSocket.sendto("recieve".encode(), (host, int(port)))
+                            log_routing_advertisement("recieve", "Outgoing",int(port))
                             data_str = str(data)
-                            clientSocket.sendto(data_str.encode(), (host, port))
-                            log_routing_advertisement(data_str, "Outgoing",port)
+                            clientSocket.sendto(data_str.encode(), (host, int(port)))
+                            log_routing_advertisement(data_str, "Outgoing",int(port))
                     break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
-                    
+        #active protocol 14000 10000 6
+        elif message == 'active'and status_protocol == 'start':
+            print('active')
+            while True:
+                try:
+                    message, address = clientSocket.recvfrom(8192)
+                    message = message.decode().rstrip()
+                    parts = message.split()
+                    stop_route.remove(parts[1])
+                    update_interface(message)
+                    for port in ports:
+                        if port not in stop_route:
+                            clientSocket.sendto("recieve".encode(), (host, int(port)))
+                            log_routing_advertisement("recieve", "Outgoing",int(port))
+                            data_str = str(data)
+                            clientSocket.sendto(data_str.encode(), (host, int(port)))
+                            log_routing_advertisement(data_str, "Outgoing",int(port))
+                    break
+                except BlockingIOError:
+                    continue  # Continue waiting for the message
         #send display when cli send show command
         elif message == 'show':
             # Convert data to string and send to the client
+            print('show')
             data_str = str(data)
             clientSocket.sendto(data_str.encode(), (host, address[1]))
             log_routing_advertisement(data_str, "Outgoing", address[1])
@@ -303,10 +331,11 @@ while True:
             sent_status = 'status protocol is '+ status_protocol
             clientSocket.sendto(sent_status.encode(), (host, address[1]))
             log_routing_advertisement(sent_status, "Outgoing", address[1])
-
+            
             
         #recieve new table from routers that it connected and send updated table to outgoing table
         elif message == 'recieve' and status_protocol == 'start':
+            print('recieve')
             while True:
                 try:
                     message, address = clientSocket.recvfrom(8192)
@@ -323,6 +352,7 @@ while True:
 
         #getting updated table from router that connecting
         elif message == 'update' and status_protocol == 'start':
+            print('update')
             while True:
                 try:
                     message, address = clientSocket.recvfrom(8192)
@@ -334,22 +364,26 @@ while True:
                     continue  # Continue waiting for the message
 
         elif message == 'path':
+            print('path')
             while True:
                 try:
                     message, address = clientSocket.recvfrom(8192)
                     message = message.decode().rstrip()
                     parts = message.split()
                     finding_path(message)
+                    break
                 except BlockingIOError:
                     continue  # Continue waiting for the message
 
 
         #handling log display
         elif message == 'log_start_display':
+            print('on')
             display_ads = True
             clientSocket.sendto("Started displaying routing advertisements.".encode(), (host, address[1]))
             print(display_routing_advertisements())
         elif message == 'log_stop_display':
+            print('off')
             display_ads = False
             clientSocket.sendto("Stopped displaying routing advertisements.".encode(), (host, address[1]))
         if display_ads:
